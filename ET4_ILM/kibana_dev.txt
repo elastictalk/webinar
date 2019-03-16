@@ -1,0 +1,76 @@
+i# ILM nginx
+PUT _cluster/settings
+{
+  "persistent": {
+    "indices.lifecycle.poll_interval":"1s"
+  }
+}
+
+PUT /_ilm/policy/nginx_ilm_policy
+{
+  "policy": {
+    "phases": {
+      "hot": {
+        "actions": {
+          "rollover": {
+            "max_docs": "10"
+          }
+        }
+      },
+      "warm": {
+        "min_age": "5s",
+        "actions": {
+          "allocate": {
+            "include": {
+              "box_type": "warm"
+            }
+          }
+        }
+      },
+      "cold": {
+        "min_age": "20s",
+        "actions": {
+          "allocate": {
+            "include": {
+              "box_type": "cold"
+            }
+          }
+        }
+      },
+      "delete": {
+        "min_age": "40s",
+        "actions": {
+          "delete": {}
+        }
+      }
+    }
+  }
+}
+
+PUT /_template/nginx_ilm_template
+{
+  "index_patterns": ["nginx_logs-*"],                 
+  "settings": {
+    "number_of_shards": 1,
+    "number_of_replicas": 0,
+    "index.lifecycle.name": "nginx_ilm_policy",      
+    "index.lifecycle.rollover_alias": "nginx_logs",
+    "index.routing.allocation.include.box_type": "hot"
+  }
+}
+
+PUT nginx_logs-000001
+{
+  "aliases": {
+    "nginx_logs": {
+      "is_write_index":true
+    }
+  }
+}
+
+POST nginx_logs/_doc
+{
+  "name":"abbc"
+}
+
+GET nginx_logs/_search

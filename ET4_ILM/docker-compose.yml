@@ -1,0 +1,57 @@
+version: '3.0'
+services:
+    es01:
+        image: registry.cn-hangzhou.aliyuncs.com/elasticstack/elasticsearch:6.6.0
+        container_name: hot_warm_es01
+        environment:
+            - cluster.name=hotwarm
+            - node.name=es01_hot
+            - "ES_JAVA_OPTS=-Xms256m -Xmx256m"
+            - node.attr.box_type=hot
+        volumes:
+            - esdata1:/usr/share/elasticsearch/data
+        ports:
+            - 9200:9200
+    es02:
+        image: registry.cn-hangzhou.aliyuncs.com/elasticstack/elasticsearch:6.6.0
+        container_name: hot_warm_es02
+        environment:
+            - cluster.name=hotwarm
+            - node.name=es02_warm
+            - "ES_JAVA_OPTS=-Xms256m -Xmx256m"
+            - node.attr.box_type=warm
+            - "discovery.zen.ping.unicast.hosts=es01"
+              
+        volumes:
+            - esdata2:/usr/share/elasticsearch/data
+    es03:
+        image: registry.cn-hangzhou.aliyuncs.com/elasticstack/elasticsearch:6.6.0
+        container_name: hot_warm_es03
+        environment:
+            - cluster.name=hotwarm
+            - node.name=es03_cold
+            - "ES_JAVA_OPTS=-Xms256m -Xmx256m"
+            - node.attr.box_type=cold
+            - "discovery.zen.ping.unicast.hosts=es01"
+        volumes:
+            - esdata3:/usr/share/elasticsearch/data
+    kibana:
+        image: registry.cn-hangzhou.aliyuncs.com/elasticstack/kibana:6.6.0
+        container_name: hot_warm_kibana
+        environment:
+            - ELASTICSEARCH_HOSTS=http://es01:9200
+        ports:
+            - 5601:5601
+    cerebro:
+        image: lmenezes/cerebro
+        container_name: cerebro
+        ports:
+            - 9100:9000
+
+volumes:
+  esdata1:
+    driver: local
+  esdata2:
+    driver: local
+  esdata3:
+    driver: local
